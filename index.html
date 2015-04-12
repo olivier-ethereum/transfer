@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js">
+<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+<title>Transfer</title>
+</head>
+<body>
+	<div ng-app="transapp" ng-controller="transctrl" class="container">
+		<div class="header"><h2>Transfer</h2></div>
+		<div class="jumbotron">
+			<div ng-show="!web3" class="text-danger"><h4><strong>Soit vous n'êtes pas sous Mist / Alethzero, soit vous avez un problème avec ethereum.js</strong></h4></div>
+			<h5>Numéro de block courant : <strong>{{block}}</strong></h5>
+			<div ng-show="statut==0">	
+				<input type="text" ng-model="choixnom"/>	
+				<input type="button" value="Inscription" ng-click="Inscription(choixnom);"/>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-sm-4">
+				<h4>De :</h4>
+				<label ng-repeat="compte in LstCompte">
+					<input type="radio" ng-value="compte.addr" ng-model="$parent.source"><strong>{{compte.addr}}</strong><br>
+						Solde : {{compte.argent}}<br>
+				</label>
+				
+			</div>
+			<div class="col-sm-4">
+				<input type="text" ng-model="montant" ><input type="button"  value="Transférer" ng-click="Transferer(montant)">
+			</div>
+			<div class="col-sm-4">
+				<h4>Vers :</h4>
+				<label ng-repeat="compte in LstCompte">
+					<input type="radio" ng-value="compte.addr" ng-model="$parent.dest"><strong>{{compte.addr}}</strong><br>
+						Solde : {{compte.argent}}<br>
+				</label>
+			</div>
+		</div>
+	</div>
+<script>
+	var app=angular.module('transapp',[]);
+	app.controller('transctrl',function($scope)
+	{
+		if (typeof web3!=='undefined')
+		{
+			$scope.web3=true;
+
+			var Chargement=function()
+			{
+				//Chargement de l'en-tête
+				$scope.block=web3.eth.blockNumber;
+
+				//Chargement des listes
+				$scope.LstCompte=[];
+				for(var i=0;i<web3.eth.accounts.length;i++)
+				{
+					var p=web3.eth.accounts[i];
+					var pjson={addr:p,argent:parseInt(web3.eth.getBalance(p))/1000000000000000000};
+
+					$scope.LstCompte.push(pjson);
+				}
+			}
+		
+			Chargement();
+			var f=web3.eth.filter('latest');
+			f.watch(function()
+			{
+				$scope.$apply(Chargement());
+			});
+
+
+			$scope.Transferer=function(montant)
+			{
+				web3.eth.sendTransaction(
+				{
+					from:$scope.source,
+					to:$scope.dest,
+					value:montant*1000000000000000000,
+					gasPrice:1
+				});
+			}			
+
+			$scope.ValiderParticipant=function(addr)
+			{
+		
+				if (hack.Organisateur()!=web3.eth.coinbase)
+				{
+					alert("Vous n'êtes pas l'organisateur");
+					return;
+				}
+				hack.ValiderParticipant(addr);
+			}
+		}
+		else
+		{
+			$scope.web3=false;
+		}
+	});
+</script>
+</body>
+</html>
+
